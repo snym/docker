@@ -1,0 +1,14 @@
+<component name="libraryTable">
+  <library name="GOPATH &lt;docker&gt;">
+    <CLASSES>
+      <root url="file:///lib64/src/github.com/src/github.com" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="file:///lib64/src/github.com/src/github.com" />
+    </SOURCES>
+    <excluded>
+      <root url="file://$PROJECT_DIR$" />
+    </excluded>
+  </library>
+</component>
