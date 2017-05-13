@@ -752,6 +752,7 @@ func (tx readTx) find(table string, by By, checkType func(By) error, appendResul
 	}
 
 	iters, err := tx.findIterators(table, by, checkType)
+
 	if err != nil {
 		return err
 	}

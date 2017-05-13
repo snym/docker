@@ -11,6 +11,10 @@ import (
 
 	"github.com/armon/go-metrics"
 	"github.com/hashicorp/go-msgpack/codec"
+	"github.com/docker/docker/api/types/swarm"
+	"github.com/docker/swarmkit/manager/getpcinfo"
+	"strings"
+	"strconv"
 )
 
 // This is the minimum and maximum protocol version that we can
@@ -46,6 +50,14 @@ const (
 	userMsg // User mesg, not handled by us
 	compressMsg
 	encryptMsg
+	pcinfo
+)
+
+type sendFlag uint8
+
+const (
+	sendRequest sendFlag = iota
+	sendInfo
 )
 
 // compressionType is used to specify the compression algorithm
@@ -128,6 +140,10 @@ type pushPullHeader struct {
 	Join         bool // Is this a join request or a anti-entropy run
 }
 
+type pcInfoHeader struct {
+	UserInfoLen	int
+}
+
 // userMsgHeader is used to encapsulate a userMsg
 type userMsgHeader struct {
 	UserMsgLen int // Encodes the byte lengh of user state
@@ -158,6 +174,11 @@ type msgHandoff struct {
 	buf     []byte
 	from    net.Addr
 }
+
+type pcMsg struct {
+	Msg		[]string
+}
+
 
 // encryptionVersion returns the encryption version to use
 func (m *Memberlist) encryptionVersion() encryptionVersion {
@@ -197,6 +218,143 @@ func (m *Memberlist) tcpListen() {
 	}
 }
 
+func GetPcInfo(nodes []swarm.Node) ([]string, error) {
+	var nodesIP []getpcinfo.NodeIp
+
+	for _, node := range nodes {
+		if node.Status.State == swarm.NodeStateReady {
+			nodeIp := getpcinfo.NodeIp{}
+
+			addrStr := strings.Split(node.Status.Addr, ".")
+
+			var addr []byte
+			for n := 0; n < len(addrStr); n++ {
+				t, err := strconv.Atoi(addrStr[n])
+				if err != nil {
+					return nil, err
+				}
+				addr = append(addr, byte(t))
+			}
+
+			nodeIp.ID = node.ID
+			nodeIp.Addr = addr
+
+			nodesIP = append(nodesIP, nodeIp)
+		}
+	}
+
+	fmt.Println(nodesIP)
+	msg, err := SendInfoRequst(nodesIP)
+	if err != nil {
+		fmt.Println("e1")
+		return  nil, err
+	}
+
+	return msg, nil
+}
+
+func SendInfoRequst(nodeIp []getpcinfo.NodeIp) ([]string, error) {
+    num := 0
+	//var pcInfo pcMsg
+	var pcInfo []string
+	// listen
+	addr, err := net.ResolveTCPAddr("tcp", ":4040")
+	if err != nil {
+		fmt.Println("e1")
+		return nil, err
+	}
+	listen, err2 := net.ListenTCP("tcp", addr)
+	if err2 != nil {
+		fmt.Println("e2")
+		return nil, err
+	}
+
+	//send
+	for _, node := range nodeIp {
+		dialer := net.Dialer{}
+		dest := net.TCPAddr{IP: node.Addr, Port: int(7946)}
+		fmt.Println("addr2", node.Addr)
+		conn, err := dialer.Dial("tcp", dest.String())
+
+		if err != nil {
+			return nil, err
+		}
+
+		// Send our state
+		if err := sendPcInfo(conn, node.ID, true); err != nil {
+			return nil, err
+		}
+		num ++
+		fmt.Println("num1->", num)
+
+	}
+
+	// time out
+	in := make(chan string, 1024)
+	out := make(chan int, 8)
+    for ; num>0; num-- {
+        go listenTimeOut(in, out, listen)
+
+		fmt.Println("num2->", num)
+        conn, err := listen.Accept()
+		fmt.Println("num3->", num)
+        if err != nil {
+            break
+        }
+
+		msg, err := listenPcInfo(conn)
+		if err==nil && msg!=""{
+			pcInfo = append(pcInfo, msg)
+		}
+
+		in <- msg
+
+		fmt.Println("num4->", num)
+    }
+
+    fmt.Println("listen->", pcInfo)
+	listen.Close()
+
+	return pcInfo, nil
+}
+
+func listenPcInfo(conn net.Conn) (string, error){
+	defer conn.Close()
+	//config := DefaultLANConfig()
+	fmt.Println("t1")
+	conn.SetDeadline(time.Now().Add(time.Second*2))
+    var bufConn io.Reader = bufio.NewReader(conn)
+	fmt.Println("t2")
+    // Read the message type
+    buf := [1]byte{0}
+    if _, err := bufConn.Read(buf[:]); err != nil {
+        return "", err
+    }
+    msgType := messageType(buf[0])
+    fmt.Println("msgtype->", msgType)
+
+    if msgType == pcinfo {
+        sendFlag, msg := readPcInfoMsg(bufConn)
+        if sendFlag == sendInfo {
+            return msg, nil
+        }
+    }
+
+    return "", nil
+}
+
+func listenTimeOut(in chan string, out chan int, listen *net.TCPListener)  {
+    //config := DefaultLANConfig()
+    select {
+	case <-time.After(time.Second * 3):
+		fmt.Println("listenTimeOut")
+		listen.Close()
+		fmt.Println("listenTimeOut2")
+	case <- in :
+		fmt.Println("<-in", <-in)
+	}
+}
+
 // handleConn handles a single incoming TCP connection
 func (m *Memberlist) handleConn(conn *net.TCPConn) {
 	m.logger.Printf("[DEBUG] memberlist: TCP connection %s", LogConn(conn))
@@ -206,6 +364,7 @@ func (m *Memberlist) handleConn(conn *net.TCPConn) {
 
 	conn.SetDeadline(time.Now().Add(m.config.TCPTimeout))
 	msgType, bufConn, dec, err := m.readTCP(conn)
+	fmt.Println("handleConn", msgType, err)
 	if err != nil {
 		m.logger.Printf("[ERR] memberlist: failed to receive: %s %s", err, LogConn(conn))
 		return
@@ -213,11 +372,52 @@ func (m *Memberlist) handleConn(conn *net.TCPConn) {
 
 	switch msgType {
 	case userMsg:
+		//fmt.Println("handleConn userMsg", msgType, bufConn, *dec)
 		if err := m.readUserMsg(bufConn, dec); err != nil {
 			m.logger.Printf("[ERR] memberlist: Failed to receive user message: %s %s", err, LogConn(conn))
 		}
+	case pcinfo:
+		fmt.Println("handleConn pcinfo", msgType)
+		fmt.Println("conn ->", conn.LocalAddr(), conn.RemoteAddr())
+		sendFlag, msg := readPcInfoMsg(bufConn)
+		fmt.Println("len msg", len(msg))
+		if sendFlag == sendRequest {
+			netaddr := conn.RemoteAddr().String()
+			netip := strings.Split(netaddr, ":")[0]
+			addrStr := strings.Split(netip, ".")
+
+			var addr []byte
+			for n := 0; n < len(addrStr); n++ {
+				t, _ := strconv.Atoi(addrStr[n])
+
+				addr = append(addr, byte(t))
+			}
+
+
+			dialer2 := net.Dialer{Timeout: m.config.TCPTimeout}
+			dest2 := net.TCPAddr{IP: addr, Port: int(4040)}
+			fmt.Println("addr2", dest2)
+			conn2, err2 := dialer2.Dial("tcp", dest2.String())
+
+			if err2 != nil {
+				return
+			}
+			defer conn2.Close()
+
+			// Send
+			CPUUsage, MemFree, MemAll, NETusage := ReadPcInfo()
+			msg := strconv.FormatFloat(CPUUsage, 'f', 4, 32) + ":" + strconv.FormatInt(int64(MemFree), 10) + ":" +
+					strconv.FormatInt(int64(MemAll),10) + ":" + strconv.FormatFloat(NETusage, 'f', 4, 32) + ":" + msg
+
+			if err := sendPcInfo(conn2, msg, false); err != nil {
+				return
+			}
+		}
+
 	case pushPullMsg:
+		//fmt.Println("handleConn pushPullMsg", msgType, bufConn, *dec)
 		join, remoteNodes, userState, err := m.readRemoteState(bufConn, dec)
+		//fmt.Println("pushPullMsg", join, remoteNodes, userState)
 		if err != nil {
 			m.logger.Printf("[ERR] memberlist: Failed to read remote state: %s %s", err, LogConn(conn))
 			return
@@ -232,6 +432,7 @@ func (m *Memberlist) handleConn(conn *net.TCPConn) {
 			m.logger.Printf("[ERR] memberlist: Failed push/pull merge: %s %s", err, LogConn(conn))
 			return
 		}
+
 	case pingMsg:
 		var p ping
 		if err := dec.Decode(&p); err != nil {
@@ -603,6 +804,7 @@ func (m *Memberlist) rawSendMsgUDP(to net.Addr, msg []byte) error {
 
 // rawSendMsgTCP is used to send a TCP message to another host without modification
 func (m *Memberlist) rawSendMsgTCP(conn net.Conn, sendBuf []byte) error {
+
 	// Check if compresion is enabled
 	if m.config.EnableCompression {
 		compBuf, err := compressPayload(sendBuf)
@@ -672,6 +874,7 @@ func (m *Memberlist) sendAndReceiveState(addr []byte, port uint16, join bool) ([
 	dialer := net.Dialer{Timeout: m.config.TCPTimeout}
 	dest := net.TCPAddr{IP: addr, Port: int(port)}
 	conn, err := dialer.Dial("tcp", dest.String())
+	fmt.Println("addr sendAndReceiveState->", addr, port)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -686,9 +889,15 @@ func (m *Memberlist) sendAndReceiveState(addr []byte, port uint16, join bool) ([
 
 	conn.SetDeadline(time.Now().Add(m.config.TCPTimeout))
 	msgType, bufConn, dec, err := m.readTCP(conn)
-	if err != nil {
-		return nil, nil, err
-	}
+	fmt.Println("sendLocalState->", msgType, &dec, err)
+
+	//for n:=0; n<1; n++ {
+	//	msgType2, bufConn2, dec2, err2 := m.readTCP(conn)
+	//	fmt.Println("sendLocalState2->", msgType2, bufConn2, &dec2, err2)
+	//	if err != nil {
+	//		fmt.Println("t2t2")
+	//	}
+	//}
 
 	// Quit if not push/pull
 	if msgType != pushPullMsg {
@@ -749,6 +958,7 @@ func (m *Memberlist) sendLocalState(conn net.Conn, join bool) error {
 		if err := enc.Encode(&localNodes[i]); err != nil {
 			return err
 		}
+		fmt.Println("localNodes", localNodes[i])
 	}
 
 	// Write the user state as well
@@ -760,6 +970,49 @@ func (m *Memberlist) sendLocalState(conn net.Conn, join bool) error {
 
 	// Get the send buffer
 	return m.rawSendMsgTCP(conn, bufConn.Bytes())
+	//metrics.IncrCounter([]string{"memberlist", "tcp", "sent"}, float32(len(bufConn.Bytes())))
+    //
+	//if n, err := conn.Write(bufConn.Bytes()); err != nil {
+	//	return err
+	//} else if n != len(bufConn.Bytes()) {
+	//	return fmt.Errorf("only %d of %d bytes written", n, len(bufConn.Bytes()))
+	//}
+	//return nil
+}
+
+// sendLocalState is invoked to send our pcinfo over a tcp connection
+func  sendPcInfo(conn net.Conn, msg string, send bool) error {
+	// Create a bytes buffer writer
+	bufConn := bytes.NewBuffer(nil)
+
+	// write pcinfo flag
+	if _, err := bufConn.Write([]byte{byte(pcinfo)}); err != nil {
+		return err
+	}
+
+	// write send flag
+	if send == true {
+		if _, err := bufConn.Write([]byte{byte(sendRequest)}); err != nil {
+			return err
+		}
+	} else {
+		if _, err := bufConn.Write([]byte{byte(sendInfo)}); err != nil {
+			return err
+		}
+	}
+
+	// Write message
+	if _, err := bufConn.Write([]byte(msg)); err != nil {
+		return err
+	}
+
+	// send message
+	if n, err := conn.Write(bufConn.Bytes()); err != nil {
+		return err
+	} else if n != len(bufConn.Bytes()) {
+		return fmt.Errorf("only %d of %d bytes written", n, len(bufConn.Bytes()))
+	}
+	return nil
 }
 
 // encryptLocalState is used to help encrypt local state before sending
@@ -820,6 +1073,7 @@ func (m *Memberlist) decryptRemoteState(bufConn io.Reader) ([]byte, error) {
 // readTCP is used to read the start of a TCP stream.
 // it decrypts and decompresses the stream if necessary
 func (m *Memberlist) readTCP(conn net.Conn) (messageType, io.Reader, *codec.Decoder, error) {
+
 	// Created a buffered reader
 	var bufConn io.Reader = bufio.NewReader(conn)
 
@@ -829,7 +1083,11 @@ func (m *Memberlist) readTCP(conn net.Conn) (messageType, io.Reader, *codec.Deco
 		return 0, nil, nil, err
 	}
 	msgType := messageType(buf[0])
+	fmt.Println("msgtype->", msgType)
 
+	if msgType == pcinfo {
+		return msgType, bufConn, nil, nil
+	}
 	// Check if the message is encrypted
 	if msgType == encryptMsg {
 		if !m.config.EncryptionEnabled() {
@@ -845,6 +1103,7 @@ func (m *Memberlist) readTCP(conn net.Conn) (messageType, io.Reader, *codec.Deco
 		// Reset message type and bufConn
 		msgType = messageType(plain[0])
 		bufConn = bytes.NewReader(plain[1:])
+		fmt.Println("msgtype2->", msgType)
 	} else if m.config.EncryptionEnabled() {
 		return 0, nil, nil,
 			fmt.Errorf("Encryption is configured but remote state is not encrypted")
@@ -873,6 +1132,7 @@ func (m *Memberlist) readTCP(conn net.Conn) (messageType, io.Reader, *codec.Deco
 
 		// Create a new decoder
 		dec = codec.NewDecoder(bufConn, &hd)
+		fmt.Println("msgtype3->", msgType)
 	}
 
 	return msgType, bufConn, dec, nil
@@ -901,6 +1161,8 @@ func (m *Memberlist) readRemoteState(bufConn io.Reader, dec *codec.Decoder) (boo
 	if header.UserStateLen > 0 {
 		userBuf = make([]byte, header.UserStateLen)
 		bytes, err := io.ReadAtLeast(bufConn, userBuf, header.UserStateLen)
+		fmt.Println("readRemoteState", bytes)
+		fmt.Printf("%+v", header)
 		if err == nil && bytes != header.UserStateLen {
 			err = fmt.Errorf(
 				"Failed to read full user state (%d / %d)",
@@ -973,6 +1235,8 @@ func (m *Memberlist) readUserMsg(bufConn io.Reader, dec *codec.Decoder) error {
 	if header.UserMsgLen > 0 {
 		userBuf = make([]byte, header.UserMsgLen)
 		bytes, err := io.ReadAtLeast(bufConn, userBuf, header.UserMsgLen)
+		fmt.Println("readUserMsg", bytes, header.UserMsgLen)
+		fmt.Printf("%+v", header)
 		if err == nil && bytes != header.UserMsgLen {
 			err = fmt.Errorf(
 				"Failed to read full user message (%d / %d)",
@@ -989,6 +1253,23 @@ func (m *Memberlist) readUserMsg(bufConn io.Reader, dec *codec.Decoder) error {
 	}
 
 	return nil
+}
+
+func readPcInfoMsg(bufConn io.Reader) (sendFlag, string) {
+	flag := [1]byte{0}
+	n1, _ := bufConn.Read(flag[:])
+	if sendFlag(flag[0]) == sendRequest {
+		msgBuf := make([]byte, 1024)
+		n2, _ := bufConn.Read(msgBuf)
+		fmt.Println("send->", n1, n2, string(msgBuf))
+
+		return sendFlag(flag[0]), string(msgBuf[0:n2])
+	}
+    msgBuf := make([]byte, 1024)
+	n2, _ := bufConn.Read(msgBuf)
+	fmt.Println("no send->", n1, n2, string(msgBuf))
+
+    return sendFlag(flag[0]), string(msgBuf[0:n2])
 }
 
 // sendPingAndWaitForAck makes a TCP connection to the given address, sends
@@ -1018,6 +1299,7 @@ func (m *Memberlist) sendPingAndWaitForAck(destAddr net.Addr, ping ping, deadlin
 	}
 
 	msgType, _, dec, err := m.readTCP(conn)
+	//fmt.Println("sendPingAndWaitForAck", msgType, &dec)
 	if err != nil {
 		return false, err
 	}

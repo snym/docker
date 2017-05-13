@@ -7,6 +7,7 @@ import (
 	"github.com/docker/docker/daemon/cluster/convert"
 	swarmapi "github.com/docker/swarmkit/api"
 	"golang.org/x/net/context"
+    "fmt"
 )
 
 // GetNodes returns a list of all nodes known to a cluster.
@@ -30,6 +31,7 @@ func (c *Cluster) GetNodes(options apitypes.NodeListOptions) ([]types.Node, erro
 	r, err := state.controlClient.ListNodes(
 		ctx,
 		&swarmapi.ListNodesRequest{Filters: filters})
+    fmt.Println("cluster/nodes")
 	if err != nil {
 		return nil, err
 	}

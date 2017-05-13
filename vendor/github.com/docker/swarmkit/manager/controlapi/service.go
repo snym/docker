@@ -22,6 +22,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"fmt"
 )
 
 var (
@@ -465,6 +466,7 @@ func (s *Server) checkSecretExistence(tx store.Tx, spec *api.ServiceSpec) error 
 // - Returns `AlreadyExists` if the ServiceID conflicts.
 // - Returns an error if the creation fails.
 func (s *Server) CreateService(ctx context.Context, request *api.CreateServiceRequest) (*api.CreateServiceResponse, error) {
+	fmt.Printf("%s %+v\n\n", "Server request->", request)
 	if err := validateServiceSpec(request.Spec); err != nil {
 		return nil, err
 	}

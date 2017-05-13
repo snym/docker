@@ -12,6 +12,7 @@ import (
 func (cli *Client) ServiceCreate(ctx context.Context, service swarm.ServiceSpec, options types.ServiceCreateOptions) (types.ServiceCreateResponse, error) {
 	var headers map[string][]string
 
+
 	if options.EncodedRegistryAuth != "" {
 		headers = map[string][]string{
 			"X-Registry-Auth": {options.EncodedRegistryAuth},

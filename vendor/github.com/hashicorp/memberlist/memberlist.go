@@ -148,6 +148,7 @@ func newMemberlist(conf *Config) (*Memberlist, error) {
 // After creating a Memberlist, the configuration given should not be
 // modified by the user anymore.
 func Create(conf *Config) (*Memberlist, error) {
+	fmt.Println("Create Memberlist ->")
 	m, err := newMemberlist(conf)
 	if err != nil {
 		return nil, err
@@ -160,6 +161,19 @@ func Create(conf *Config) (*Memberlist, error) {
 	return m, nil
 }
 
+//func ShowPcInfo(conf *Config) error {
+//	m, err := newMemberlist(conf)
+//	if err != nil {
+//		return err
+//	}
+//	if err := m.setAlive(); err != nil {
+//		m.Shutdown()
+//		return err
+//	}
+//	m.sendInfoRequst()
+//	return nil
+//}
+
 // Join is used to take an existing Memberlist and attempt to join a cluster
 // by contacting all the given hosts and performing a state sync. Initially,
 // the Memberlist only contains our own state, so doing this will cause
@@ -170,6 +184,7 @@ func Create(conf *Config) (*Memberlist, error) {
 // none could be reached. If an error is returned, the node did not successfully
 // join the cluster.
 func (m *Memberlist) Join(existing []string) (int, error) {
+
 	numSuccess := 0
 	var errs error
 	for _, exist := range existing {
@@ -182,6 +197,7 @@ func (m *Memberlist) Join(existing []string) (int, error) {
 		}
 
 		for _, addr := range addrs {
+			fmt.Println("addrs->", addr.ip, addr.port)
 			if err := m.pushPullNode(addr.ip, addr.port, true); err != nil {
 				err = fmt.Errorf("Failed to join %s: %v", addr.ip, err)
 				errs = multierror.Append(errs, err)

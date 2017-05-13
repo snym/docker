@@ -20,6 +20,12 @@ const (
 	stateDead
 )
 
+type nodeManagerStateType int
+
+const (
+	worker nodeManagerStateType = iota
+	leader
+)
 // Node represents a node in the cluster.
 type Node struct {
 	Name string
@@ -219,6 +225,7 @@ START:
 func (m *Memberlist) probeNode(node *nodeState) {
 	defer metrics.MeasureSince([]string{"memberlist", "probeNode"}, time.Now())
 
+
 	// Prepare a ping message and setup an ack handler.
 	ping := ping{SeqNo: m.nextSeqNo(), Node: node.Name}
 	ackCh := make(chan ackMessage, m.config.IndirectChecks+1)
@@ -227,6 +234,7 @@ func (m *Memberlist) probeNode(node *nodeState) {
 	// Send a ping to the node.
 	deadline := time.Now().Add(m.config.ProbeInterval)
 	destAddr := &net.UDPAddr{IP: node.Addr, Port: int(node.Port)}
+	//fmt.Println("state send")
 	if err := m.encodeAndSendMsg(destAddr, pingMsg, &ping); err != nil {
 		m.logger.Printf("[ERR] memberlist: Failed to send ping: %s", err)
 		return
@@ -434,6 +442,7 @@ func (m *Memberlist) pushPull() {
 	node := nodes[0]
 
 	// Attempt a push pull
+	fmt.Println("addr pushPull->", node.Addr, node.Port)
 	if err := m.pushPullNode(node.Addr, node.Port, false); err != nil {
 		m.logger.Printf("[ERR] memberlist: Push/Pull with %s failed: %s", node.Name, err)
 	}
@@ -444,6 +453,7 @@ func (m *Memberlist) pushPullNode(addr []byte, port uint16, join bool) error {
 	defer metrics.MeasureSince([]string{"memberlist", "pushPullNode"}, time.Now())
 
 	// Attempt to send and receive with the node
+	fmt.Println("addr pushPullNode->", addr, port)
 	remote, userState, err := m.sendAndReceiveState(addr, port, join)
 	if err != nil {
 		return err

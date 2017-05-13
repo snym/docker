@@ -37,6 +37,7 @@ func (f *ReadyFilter) SetTask(_ *api.Task) bool {
 
 // Check returns true if the task can be scheduled into the given node.
 func (f *ReadyFilter) Check(n *NodeInfo) bool {
+	fmt.Println("c1")
 	return n.Status.State == api.NodeStatus_READY &&
 		n.Spec.Availability == api.NodeAvailabilityActive
 }
@@ -70,6 +71,9 @@ func (f *ResourceFilter) SetTask(t *api.Task) bool {
 
 // Check returns true if the task can be scheduled into the given node.
 func (f *ResourceFilter) Check(n *NodeInfo) bool {
+	fmt.Println("c2")
+	fmt.Println(f.reservations.NanoCPUs, f.reservations.MemoryBytes)
+	fmt.Println(n.AvailableResources.NanoCPUs, n.AvailableResources.MemoryBytes)
 	if f.reservations.NanoCPUs > n.AvailableResources.NanoCPUs {
 		return false
 	}
@@ -80,6 +84,21 @@ func (f *ResourceFilter) Check(n *NodeInfo) bool {
 
 	return true
 }
+
+//func (f *ResourceFilter) Check(n *NodeInfo) bool {
+//	fmt.Println("c2")
+//	fmt.Println(f.reservations.NanoCPUs, f.reservations.MemoryBytes)
+//	fmt.Println(n.AvailableResources.NanoCPUs, n.AvailableResources.MemoryBytes)
+//	if f.reservations.NanoCPUs > n.AvailableResources.NanoCPUs {
+//		return false
+//	}
+//
+//	if f.reservations.MemoryBytes > n.AvailableResources.MemoryBytes {
+//		return false
+//	}
+//
+//	return true
+//}
 
 // Explain returns an explanation of a failure.
 func (f *ResourceFilter) Explain(nodes int) string {
@@ -128,6 +147,7 @@ func (f *PluginFilter) SetTask(t *api.Task) bool {
 // Check returns true if the task can be scheduled into the given node.
 // TODO(amitshukla): investigate storing Plugins as a map so it can be easily probed
 func (f *PluginFilter) Check(n *NodeInfo) bool {
+	fmt.Println("c3")
 	// Get list of plugins on the node
 	nodePlugins := n.Description.Engine.Plugins
 
@@ -207,6 +227,7 @@ func (f *ConstraintFilter) SetTask(t *api.Task) bool {
 
 // Check returns true if the task's constraint is supported by the given node.
 func (f *ConstraintFilter) Check(n *NodeInfo) bool {
+	fmt.Println("c4")
 	return constraint.NodeMatches(f.constraints, n.Node)
 }
 

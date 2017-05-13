@@ -107,6 +107,7 @@ func (c *Cluster) GetService(input string) (types.Service, error) {
 
 // CreateService creates a new service in a managed swarm cluster.
 func (c *Cluster) CreateService(s types.ServiceSpec, encodedAuth string) (*apitypes.ServiceCreateResponse, error) {
+
 	var resp *apitypes.ServiceCreateResponse
 	err := c.lockedManagerAction(func(ctx context.Context, state nodeState) error {
 		err := c.populateNetworkID(ctx, state.controlClient, &s)
@@ -115,6 +116,8 @@ func (c *Cluster) CreateService(s types.ServiceSpec, encodedAuth string) (*apity
 		}
 
 		serviceSpec, err := convert.ServiceSpecToGRPC(s)
+		fmt.Println("Cluster ser->")
+		fmt.Printf("%+v", serviceSpec)
 		if err != nil {
 			return apierrors.NewBadRequestError(err)
 		}

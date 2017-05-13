@@ -224,6 +224,7 @@ const (
 // After calling this function, the configuration should no longer be used
 // or modified by the caller.
 func Create(conf *Config) (*Serf, error) {
+	fmt.Println("Create serf ->")
 	conf.Init()
 	if conf.ProtocolVersion < ProtocolVersionMin {
 		return nil, fmt.Errorf("Protocol version '%d' too low. Must be in range: [%d, %d]",

@@ -32,5 +32,6 @@ func (cli *Client) NodeList(ctx context.Context, options types.NodeListOptions) 
 	var nodes []swarm.Node
 	err = json.NewDecoder(resp.body).Decode(&nodes)
 	ensureReaderClosed(resp)
+	//fmt.Println(nodes)
 	return nodes, err
 }

@@ -4,6 +4,7 @@ import (
 	"sort"
 
 	"github.com/docker/swarmkit/api"
+    "fmt"
 )
 
 var (
@@ -51,7 +52,10 @@ func NewPipeline() *Pipeline {
 // Process a node through the filter pipeline.
 // Returns true if all filters pass, false otherwise.
 func (p *Pipeline) Process(n *NodeInfo) bool {
+    fmt.Printf("%s %+v\n", "pipeline", p)
+
 	for i, entry := range p.checklist {
+		fmt.Println(i)
 		if entry.enabled && !entry.f.Check(n) {
 			// Immediately stop on first failure.
 			p.checklist[i].failureCount++

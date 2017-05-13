@@ -105,6 +105,7 @@ func (c *Constraint) Match(whats ...string) bool {
 
 // NodeMatches returns true if the node satisfies the given constraints.
 func NodeMatches(constraints []Constraint, n *api.Node) bool {
+    fmt.Println("constraints", "node->", n)
 	for _, constraint := range constraints {
 		switch {
 		case strings.EqualFold(constraint.key, "node.id"):

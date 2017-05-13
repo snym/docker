@@ -5,6 +5,7 @@ import (
 
 	"github.com/docker/swarmkit/api"
 	"github.com/docker/swarmkit/log"
+	//"github.com/docker/swarmkit/manager/getpcinfo"
 	"golang.org/x/net/context"
 )
 
@@ -15,6 +16,8 @@ type NodeInfo struct {
 	ActiveTasksCount          int
 	ActiveTasksCountByService map[string]int
 	AvailableResources        api.Resources
+	NowResources			  NodePcInfo
+
 
 	// recentFailures is a map from service ID to the timestamps of the
 	// most recent failures the node has experienced from replicas of that
@@ -24,6 +27,17 @@ type NodeInfo struct {
 	recentFailures map[string][]time.Time
 }
 
+// pcInfo
+type NodePcInfo struct {
+	ID				string
+	CpuUsageRate	float64
+	MemFree			int64
+	MemAll			int64
+	NETUsageRate	float64
+	MemUsageRete	float64
+	Weight			float64
+}
+
 func newNodeInfo(n *api.Node, tasks map[string]*api.Task, availableResources api.Resources) NodeInfo {
 	nodeInfo := NodeInfo{
 		Node:  n,
@@ -31,6 +45,7 @@ func newNodeInfo(n *api.Node, tasks map[string]*api.Task, availableResources api
 		ActiveTasksCountByService: make(map[string]int),
 		AvailableResources:        availableResources,
 		recentFailures:            make(map[string][]time.Time),
+		//NowResources:			   nil,
 	}
 
 	for _, t := range tasks {

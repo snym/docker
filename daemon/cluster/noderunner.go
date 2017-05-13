@@ -78,6 +78,7 @@ func (n *nodeRunner) Ready() chan error {
 }
 
 func (n *nodeRunner) Start(conf nodeStartConfig) error {
+	fmt.Println("nodeRunner start ->")
 	n.mu.Lock()
 	defer n.mu.Unlock()
 

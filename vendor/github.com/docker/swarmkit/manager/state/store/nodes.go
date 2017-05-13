@@ -6,6 +6,7 @@ import (
 
 	"github.com/docker/swarmkit/api"
 	memdb "github.com/hashicorp/go-memdb"
+	"fmt"
 )
 
 const tableNode = "node"
@@ -126,6 +127,8 @@ func FindNodes(tx ReadTx, by By) ([]*api.Node, error) {
 	}
 
 	err := tx.find(tableNode, by, checkType, appendResult)
+	fmt.Println("store/node")
+
 	return nodeList, err
 }
 

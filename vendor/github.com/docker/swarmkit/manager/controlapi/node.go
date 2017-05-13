@@ -11,6 +11,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"fmt"
 )
 
 func validateNodeSpec(spec *api.NodeSpec) error {
@@ -184,7 +185,7 @@ func (s *Server) ListNodes(ctx context.Context, request *api.ListNodesRequest) (
 			}
 		}
 	}
-
+	fmt.Println("conapi")
 	return &api.ListNodesResponse{
 		Nodes: nodes,
 	}, nil

@@ -1319,6 +1319,7 @@ func (d *Dispatcher) Session(r *api.SessionRequest, stream api.Dispatcher_Sessio
 		if err := d.markNodeReady(dctx, nodeID, r.Description, addr); err != nil {
 			return err
 		}
+
 	}
 
 	fields := logrus.Fields{
@@ -1349,7 +1350,7 @@ func (d *Dispatcher) Session(r *api.SessionRequest, stream api.Dispatcher_Sessio
 	if _, err = d.nodes.GetWithSession(nodeID, sessionID); err != nil {
 		return err
 	}
-
+    //fmt.Println("dispatcher", nodeObj)
 	if err := stream.Send(&api.SessionMessage{
 		SessionID:            sessionID,
 		Node:                 nodeObj,

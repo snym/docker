@@ -62,12 +62,17 @@ func runCreate(dockerCli *command.DockerCli, opts *serviceOptions) error {
 	apiClient := dockerCli.Client()
 	createOpts := types.ServiceCreateOptions{}
 
+	fmt.Println("opts")
+	fmt.Printf("%+v\n\n", opts)
 	service, err := opts.ToService()
+	fmt.Println("service", service)
+	fmt.Printf("%+v\n\n", service)
 	if err != nil {
 		return err
 	}
 
 	specifiedSecrets := opts.secrets.Value()
+	fmt.Println("specifiedSecrets", specifiedSecrets)
 	if len(specifiedSecrets) > 0 {
 		// parse and validate secrets
 		secrets, err := ParseSecrets(apiClient, specifiedSecrets)

@@ -112,3 +112,4 @@ const (
 	// NodeStateDisconnected DISCONNECTED
 	NodeStateDisconnected NodeState = "disconnected"
 )
+

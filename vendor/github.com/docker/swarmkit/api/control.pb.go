@@ -2078,6 +2078,7 @@ func (c *controlClient) GetNode(ctx context.Context, in *GetNodeRequest, opts ..
 func (c *controlClient) ListNodes(ctx context.Context, in *ListNodesRequest, opts ...grpc.CallOption) (*ListNodesResponse, error) {
 	out := new(ListNodesResponse)
 	err := grpc.Invoke(ctx, "/docker.swarmkit.v1.Control/ListNodes", in, out, c.cc, opts...)
+
 	if err != nil {
 		return nil, err
 	}
@@ -2150,6 +2151,7 @@ func (c *controlClient) ListServices(ctx context.Context, in *ListServicesReques
 func (c *controlClient) CreateService(ctx context.Context, in *CreateServiceRequest, opts ...grpc.CallOption) (*CreateServiceResponse, error) {
 	out := new(CreateServiceResponse)
 	err := grpc.Invoke(ctx, "/docker.swarmkit.v1.Control/CreateService", in, out, c.cc, opts...)
+
 	if err != nil {
 		return nil, err
 	}

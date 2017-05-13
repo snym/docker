@@ -374,6 +374,8 @@ type serviceOptions struct {
 
 	healthcheck healthCheckOptions
 	secrets     opts.SecretOpt
+
+    bias        string
 }
 
 func newServiceOptions() *serviceOptions {
@@ -488,7 +490,8 @@ func (opts *serviceOptions) ToService() (swarm.ServiceSpec, error) {
 		UpdateConfig:   opts.update.config(),
 		RollbackConfig: opts.rollback.config(),
 		EndpointSpec:   opts.endpoint.ToEndpointSpec(),
-	}
+        Bias:		    opts.bias,
+    }
 
 	return service, nil
 }

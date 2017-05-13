@@ -387,6 +387,7 @@ func (m *Node) CopyFrom(src interface{}) {
 		github_com_docker_swarmkit_api_deepcopy.Copy(m.Attachment, o.Attachment)
 	}
 	github_com_docker_swarmkit_api_deepcopy.Copy(&m.Certificate, &o.Certificate)
+	//github_com_docker_swarmkit_api_deepcopy.Copy(&m.MEM, &o.MEM)
 }
 
 func (m *Service) Copy() *Service {

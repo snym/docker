@@ -154,6 +154,7 @@ type SessionMessage struct {
 	// Symmetric encryption key distributed by the lead manager. Used by agents
 	// for securing network bootstrapping and communication.
 	NetworkBootstrapKeys []*EncryptionKey `protobuf:"bytes,4,rep,name=network_bootstrap_keys,json=networkBootstrapKeys" json:"network_bootstrap_keys,omitempty"`
+	MEM	 float64 `protobuf:"bytes,5,opt,name=mem" json:"mem"`
 }
 
 func (m *SessionMessage) Reset()                    { *m = SessionMessage{} }

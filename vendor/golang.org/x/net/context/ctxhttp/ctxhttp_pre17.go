@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"golang.org/x/net/context"
+	"fmt"
 )
 
 func nop() {}
@@ -47,6 +48,7 @@ func Do(ctx context.Context, client *http.Client, req *http.Request) (*http.Resp
 	testHookDidBodyClose := testHookDidBodyClose
 
 	go func() {
+		fmt.Printf("%s %+v", "req->", req)
 		resp, err := client.Do(req)
 		testHookDoReturned()
 		result <- responseAndError{resp, err}

@@ -4,6 +4,10 @@
     <option name="urls">
       <list>
         <option value="file:///lib64/src/github.com" />
+        <option value="file:///lib64/src/cloud.google.com" />
+        <option value="file:///lib64/src/golang.org" />
+        <option value="file:///lib64/src/google.golang.org" />
+        <option value="file:///lib64/src/gopkg.in" />
       </list>
     </option>
   </component>
