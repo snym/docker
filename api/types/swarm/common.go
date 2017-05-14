@@ -18,7 +18,12 @@ type Meta struct {
 type Annotations struct {
 	Name   string            `json:",omitempty"`
 	Labels map[string]string `json:"Labels"`
+    Bias   string			 `json:",omitempty"`
 }
+
+//type Bias struct {
+//	Bias	string			  `json:",omitempty"`
+//}
 
 // Driver represents a driver (network, logging).
 type Driver struct {

@@ -153,10 +153,12 @@ func (s *Scheduler) Run(ctx context.Context) error {
 	for {
 		select {
 		case event := <-updates:
+            fmt.Println("event", event)
 			switch v := event.(type) {
 			case api.EventCreateTask:
+                fmt.Println("createTask1->", *(v.Task))
 				pendingChanges += s.createTask(ctx, v.Task)
-				fmt.Println("createTask->", pendingChanges)
+				//fmt.Println("createTask2->", v.Task)
 			case api.EventUpdateTask:
 				pendingChanges += s.updateTask(ctx, v.Task)
 			case api.EventDeleteTask:
@@ -170,6 +172,7 @@ func (s *Scheduler) Run(ctx context.Context) error {
 			case api.EventDeleteNode:
 				s.nodeSet.remove(v.Node.ID)
 			case state.EventCommit:
+                fmt.Println("EventCommit->", pendingChanges)
 				if commitDebounceTimer != nil {
 					if time.Since(debouncingStarted) > maxLatency {
 						commitDebounceTimer.Stop()

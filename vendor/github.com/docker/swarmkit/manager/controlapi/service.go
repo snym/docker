@@ -466,7 +466,7 @@ func (s *Server) checkSecretExistence(tx store.Tx, spec *api.ServiceSpec) error 
 // - Returns `AlreadyExists` if the ServiceID conflicts.
 // - Returns an error if the creation fails.
 func (s *Server) CreateService(ctx context.Context, request *api.CreateServiceRequest) (*api.CreateServiceResponse, error) {
-	fmt.Printf("%s %+v\n\n", "Server request->", request)
+	fmt.Printf("%s %+v\n\n", "Server request->", request.Spec)
 	if err := validateServiceSpec(request.Spec); err != nil {
 		return nil, err
 	}
@@ -493,6 +493,7 @@ func (s *Server) CreateService(ctx context.Context, request *api.CreateServiceRe
 		}
 	}
 
+    fmt.Printf("%s %+v%+v\n\n", "Server2 request->", request, service)
 	err := s.store.Update(func(tx store.Tx) error {
 		// Check to see if all the secrets being added exist as objects
 		// in our datastore
@@ -500,13 +501,14 @@ func (s *Server) CreateService(ctx context.Context, request *api.CreateServiceRe
 		if err != nil {
 			return err
 		}
-
+        fmt.Printf("%s %+v%+v\n\n", "Server3 request->", request, service)
 		return store.CreateService(tx, service)
 	})
 	if err != nil {
 		return nil, err
 	}
 
+    fmt.Printf("%s %+v\n\n", "Server4 request->", service)
 	return &api.CreateServiceResponse{
 		Service: service,
 	}, nil

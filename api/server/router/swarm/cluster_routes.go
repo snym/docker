@@ -163,9 +163,11 @@ func (sr *swarmRouter) getService(ctx context.Context, w http.ResponseWriter, r 
 
 func (sr *swarmRouter) createService(ctx context.Context, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
 	var service types.ServiceSpec
+    fmt.Println("swarmRouter->", w)
 	if err := json.NewDecoder(r.Body).Decode(&service); err != nil {
 		return err
 	}
+    fmt.Println("swarmRouter2->", service)
 
 	// Get returns "" if the header does not exist
 	encodedAuth := r.Header.Get("X-Registry-Auth")

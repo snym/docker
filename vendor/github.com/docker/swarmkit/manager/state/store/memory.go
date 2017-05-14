@@ -516,6 +516,7 @@ func (tx readTx) lookup(table, index, id string) api.StoreObject {
 // create adds a new object to the store.
 // Returns ErrExist if the ID is already taken.
 func (tx *tx) create(table string, o api.StoreObject) error {
+
 	if tx.lookup(table, indexID, o.GetID()) != nil {
 		return ErrExist
 	}
@@ -528,6 +529,8 @@ func (tx *tx) create(table string, o api.StoreObject) error {
 	copy.SetMeta(meta)
 
 	err := tx.memDBTx.Insert(table, copy)
+	fmt.Println("cpoy->")
+	fmt.Printf("%+v\n%s\n", copy, err)
 	if err == nil {
 		tx.changelist = append(tx.changelist, copy.EventCreate())
 		o.SetMeta(meta)

@@ -116,8 +116,8 @@ func (c *Cluster) CreateService(s types.ServiceSpec, encodedAuth string) (*apity
 		}
 
 		serviceSpec, err := convert.ServiceSpecToGRPC(s)
-		fmt.Println("Cluster ser->")
-		fmt.Printf("%+v", serviceSpec)
+		fmt.Println("Cluster ser ->")
+		fmt.Printf("%+v\n\n", serviceSpec)
 		if err != nil {
 			return apierrors.NewBadRequestError(err)
 		}
@@ -166,7 +166,12 @@ func (c *Cluster) CreateService(s types.ServiceSpec, encodedAuth string) (*apity
 			defer cancel()
 		}
 
-		r, err := state.controlClient.CreateService(ctx, &swarmapi.CreateServiceRequest{Spec: &serviceSpec})
+		test := &swarmapi.CreateServiceRequest{Spec: &serviceSpec}
+		//test.Spec.Bias = serviceSpec.Bias
+		fmt.Printf("%+v\n\n%+v\n\n", test, &serviceSpec)
+        fmt.Println("swarmapi->")
+		fmt.Printf("%+v\n\n%+v\n\n", *(test.Spec), &swarmapi.ServiceSpec{})
+		r, err := state.controlClient.CreateService(ctx, test)
 		if err != nil {
 			return err
 		}

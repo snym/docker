@@ -2161,6 +2161,7 @@ func (m *Service) GetID() string {
 }
 
 func (m *Service) EventCreate() Event {
+    fmt.Printf("%s\n\n", "event creat")
 	return EventCreateService{Service: m}
 }
 

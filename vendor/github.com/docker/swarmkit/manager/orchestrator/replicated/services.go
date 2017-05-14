@@ -9,6 +9,7 @@ import (
 	"github.com/docker/swarmkit/manager/orchestrator"
 	"github.com/docker/swarmkit/manager/state/store"
 	"golang.org/x/net/context"
+	"fmt"
 )
 
 // This file provices service-level orchestration. It observes changes to
@@ -190,6 +191,7 @@ func (r *Orchestrator) addTasks(ctx context.Context, batch *store.Batch, service
 
 		delete(deadSlots, slot)
 		err := batch.Update(func(tx store.Tx) error {
+			fmt.Println("services->")
 			return store.CreateTask(tx, orchestrator.NewTask(r.cluster, service, slot, ""))
 		})
 		if err != nil {

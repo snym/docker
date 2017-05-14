@@ -24,6 +24,7 @@ message IndexEntry {
 message Annotations {
 	string name = 1;
 	map<string, string> labels = 2;
+	string bias = 3;
 
 	// Indices provides keys and values for indexing this object.
 	// A single key may have multiple values.

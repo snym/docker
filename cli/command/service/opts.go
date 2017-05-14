@@ -450,6 +450,7 @@ func (opts *serviceOptions) ToService() (swarm.ServiceSpec, error) {
 		Annotations: swarm.Annotations{
 			Name:   opts.name,
 			Labels: runconfigopts.ConvertKVStringsToMap(opts.labels.GetAll()),
+            Bias:   opts.bias,
 		},
 		TaskTemplate: swarm.TaskSpec{
 			ContainerSpec: swarm.ContainerSpec{
@@ -490,7 +491,9 @@ func (opts *serviceOptions) ToService() (swarm.ServiceSpec, error) {
 		UpdateConfig:   opts.update.config(),
 		RollbackConfig: opts.rollback.config(),
 		EndpointSpec:   opts.endpoint.ToEndpointSpec(),
-        Bias:		    opts.bias,
+        //Bias:		    swarm.Bias{
+		//	Bias:		opts.bias,
+		//},
     }
 
 	return service, nil
@@ -645,4 +648,5 @@ const (
 	flagSecret                  = "secret"
 	flagSecretAdd               = "secret-add"
 	flagSecretRemove            = "secret-rm"
+	flagBias            		= "bias"
 )

@@ -43,7 +43,7 @@ import (
 	"golang.org/x/net/trace"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/transport"
-)
+	)
 
 // recvResponse receives and parses an RPC response.
 // On error, it returns the error and indicates whether the call should be retried.
@@ -97,6 +97,10 @@ func sendRequest(ctx context.Context, codec Codec, compressor Compressor, callHd
 	if err != nil {
 		return nil, Errorf(codes.Internal, "grpc: %v", err)
 	}
+	//fmt.Println("args->", args)
+	//fmt.Printf("%s %+v", "outBuf->", *msg)
+	//fmt.Println("opts->", opts)
+
 	err = t.Write(stream, outBuf, opts)
 	// t.NewStream(...) could lead to an early rejection of the RPC (e.g., the service/method
 	// does not exist.) so that t.Write could get io.EOF from wait(...). Leave the following
@@ -105,6 +109,7 @@ func sendRequest(ctx context.Context, codec Codec, compressor Compressor, callHd
 		return nil, err
 	}
 	// Sent successfully.
+	//fmt.Printf("%s %+v", "stream->", stream)
 	return stream, nil
 }
 
@@ -206,6 +211,7 @@ func invoke(ctx context.Context, method string, args, reply interface{}, cc *Cli
 			return toRPCErr(err)
 		}
 		err = recvResponse(cc.dopts, t, &c, stream, reply)
+		//fmt.Printf("%s %+v\n\n", "c->", &c)
 		if err != nil {
 			if put != nil {
 				put()

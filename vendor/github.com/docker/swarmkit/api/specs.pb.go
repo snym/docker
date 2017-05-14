@@ -152,6 +152,7 @@ type ServiceSpec struct {
 	// Service endpoint specifies the user provided configuration
 	// to properly discover and load balance a service.
 	Endpoint *EndpointSpec `protobuf:"bytes,8,opt,name=endpoint" json:"endpoint,omitempty"`
+	//Bias     Bias          `protobuf:"bytes,1,opt,name=bias" json:"bias,omitempty"`
 }
 
 func (m *ServiceSpec) Reset()                    { *m = ServiceSpec{} }
@@ -1224,6 +1225,7 @@ func (m *ServiceSpec) MarshalTo(dAtA []byte) (int, error) {
 		}
 		i += n7
 	}
+	fmt.Println("AnnotationsS->", string(dAtA[:i]))
 	return i, nil
 }
 

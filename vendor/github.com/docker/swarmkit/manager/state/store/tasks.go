@@ -7,6 +7,7 @@ import (
 	"github.com/docker/swarmkit/api"
 	"github.com/docker/swarmkit/api/naming"
 	memdb "github.com/hashicorp/go-memdb"
+	"fmt"
 )
 
 const tableTask = "task"
@@ -87,6 +88,7 @@ func init() {
 				}
 			}
 			for _, t := range snapshot.Tasks {
+				fmt.Println("tesks1->")
 				if err := CreateTask(tx, t); err != nil {
 					return err
 				}
@@ -99,6 +101,7 @@ func init() {
 				obj := v.Task
 				switch sa.Action {
 				case api.StoreActionKindCreate:
+					fmt.Println("tesks2->")
 					return CreateTask(tx, obj)
 				case api.StoreActionKindUpdate:
 					return UpdateTask(tx, obj)
@@ -114,6 +117,7 @@ func init() {
 // CreateTask adds a new task to the store.
 // Returns ErrExist if the ID is already taken.
 func CreateTask(tx Tx, t *api.Task) error {
+	fmt.Println("CreateTask->")
 	return tx.create(tableTask, t)
 }
 

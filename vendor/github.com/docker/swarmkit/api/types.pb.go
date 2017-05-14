@@ -749,11 +749,16 @@ func (*IndexEntry) Descriptor() ([]byte, []int) { return fileDescriptorTypes, []
 // Annotations provide useful information to identify API objects. They are
 // common to all API specs.
 type Annotations struct {
-	Name   string            `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Labels map[string]string `protobuf:"bytes,2,rep,name=labels" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	// Indices provides keys and values for indexing this object.
+	Bias   string		     `protobuf:"bytes,1,opt,name=bias,proto3" json:"bias,omitempty"`
+	Name   string            `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Labels map[string]string `protobuf:"bytes,3,rep,name=labels" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+    // Indices provides keys and values for indexing this object.
 	// A single key may have multiple values.
 	Indices []IndexEntry `protobuf:"bytes,4,rep,name=indices" json:"indices"`
+}
+
+type Bias struct {
+    Bias    string          `protobuf:"bytes,1,opt,name=bias" json:"bias,omitempty"`
 }
 
 func (m *Annotations) Reset()                    { *m = Annotations{} }
@@ -3106,9 +3111,15 @@ func (m *Annotations) MarshalTo(dAtA []byte) (int, error) {
 			i += copy(dAtA[i:], v)
 		}
 	}
+	if len(m.Bias) > 0 {
+		dAtA[i] = 0x22
+		i++
+		i = encodeVarintTypes(dAtA, i, uint64(len(m.Bias)))
+		i += copy(dAtA[i:], m.Bias)
+	}
 	if len(m.Indices) > 0 {
 		for _, msg := range m.Indices {
-			dAtA[i] = 0x22
+			dAtA[i] = 0x2a
 			i++
 			i = encodeVarintTypes(dAtA, i, uint64(msg.Size()))
 			n, err := msg.MarshalTo(dAtA[i:])
@@ -3118,6 +3129,7 @@ func (m *Annotations) MarshalTo(dAtA []byte) (int, error) {
 			i += n
 		}
 	}
+	fmt.Println("AnnotationsM->", string(dAtA[:i]))
 	return i, nil
 }
 
@@ -5264,6 +5276,10 @@ func (m *Annotations) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovTypes(uint64(l))
 	}
+	l = len(m.Bias)
+	if l >0 {
+		n += 1 + l + sovTypes(uint64(l))
+	}
 	if len(m.Labels) > 0 {
 		for k, v := range m.Labels {
 			_ = k
@@ -6247,6 +6263,7 @@ func (this *Annotations) String() string {
 	s := strings.Join([]string{`&Annotations{`,
 		`Name:` + fmt.Sprintf("%v", this.Name) + `,`,
 		`Labels:` + mapStringForLabels + `,`,
+		`Bias:` + fmt.Sprintf("%v", this.Bias) + `,`,
 		`Indices:` + strings.Replace(strings.Replace(fmt.Sprintf("%v", this.Indices), "IndexEntry", "IndexEntry", 1), `&`, ``, 1) + `,`,
 		`}`,
 	}, "")

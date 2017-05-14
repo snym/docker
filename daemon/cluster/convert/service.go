@@ -114,6 +114,7 @@ func ServiceSpecToGRPC(s types.ServiceSpec) (swarmapi.ServiceSpec, error) {
 		Annotations: swarmapi.Annotations{
 			Name:   name,
 			Labels: s.Labels,
+			Bias:	s.Bias,
 		},
 		Task: swarmapi.TaskSpec{
 			Resources:   resourcesToGRPC(s.TaskTemplate.Resources),
@@ -123,6 +124,10 @@ func ServiceSpecToGRPC(s types.ServiceSpec) (swarmapi.ServiceSpec, error) {
 		},
 		Networks: serviceNetworks,
 	}
+
+	//fmt.Printf("%s %+v\n\n", "spec", &spec)
+	//spec2 := swarmapi.ServiceSpec{}
+	//fmt.Printf("%s %+v\n%+v\n\n", "spec2", &spec2, spec2)
 
 	containerSpec, err := containerToGRPC(s.TaskTemplate.ContainerSpec)
 	if err != nil {

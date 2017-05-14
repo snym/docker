@@ -28,7 +28,7 @@ type ServiceSpec struct {
 	// This field will be removed in a future release.
 	Networks     []NetworkAttachmentConfig `json:",omitempty"`
 	EndpointSpec *EndpointSpec             `json:",omitempty"`
-	Bias		 string					`json:",omitempty"`
+	//Bias
 }
 
 // ServiceMode represents the mode of a service.

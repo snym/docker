@@ -2150,11 +2150,13 @@ func (c *controlClient) ListServices(ctx context.Context, in *ListServicesReques
 
 func (c *controlClient) CreateService(ctx context.Context, in *CreateServiceRequest, opts ...grpc.CallOption) (*CreateServiceResponse, error) {
 	out := new(CreateServiceResponse)
+	fmt.Println("CreateServiceRequest->", in)
 	err := grpc.Invoke(ctx, "/docker.swarmkit.v1.Control/CreateService", in, out, c.cc, opts...)
 
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("controlClient->", out)
 	return out, nil
 }
 
@@ -3555,6 +3557,8 @@ func (m *CreateServiceRequest) MarshalTo(dAtA []byte) (int, error) {
 		}
 		i += n14
 	}
+	fmt.Println("Marshal->", string(dAtA[:i]))
+
 	return i, nil
 }
 

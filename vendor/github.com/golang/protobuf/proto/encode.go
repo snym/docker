@@ -229,6 +229,8 @@ type Marshaler interface {
 // and encodes it into the wire format, returning the data.
 func Marshal(pb Message) ([]byte, error) {
 	// Can the object marshal itself?
+	//fmt.Printf("%s %+v\n%+v\n\n", "pb->", pb, pb.String())
+
 	if m, ok := pb.(Marshaler); ok {
 		return m.Marshal()
 	}
